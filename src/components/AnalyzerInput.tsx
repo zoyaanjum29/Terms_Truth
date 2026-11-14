@@ -4,12 +4,15 @@ import {
   Loader2,
   Sparkles,
   AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 
 interface AnalyzerInputProps {
   onAnalyze: (text: string, title: string) => void;
   loading: boolean;
   error: string | null;
+  onRetry: () => void;
+  canRetry: boolean;
 }
 
 const sampleText = `Terms of Service
@@ -20,7 +23,7 @@ By using this service, you agree to the following terms:
 
 2. Data Collection: We may collect your personal information including device data, location, browsing history, and communications. We may share your personal data with third-party advertisers for commercial purposes.
 
-3. Content License: By posting content, you grant us a perpetual, irrevocable, royalty-free, worldwide license to use, reproduce, modify, distribute, and create derivative works from your content.
+3. Content License: By posting content, you grant us a perpetual, irrevocable, royalty-free, worldwide license to use, reproduce, modify, distribute, and create derivative works from your content. We may also use your uploaded content to train our AI models.
 
 4. Account Termination: We reserve the right to terminate your account at any time without notice at our sole discretion.
 
@@ -30,7 +33,7 @@ By using this service, you agree to the following terms:
 
 7. Auto-Renewal: Your subscription will automatically renew each billing cycle unless you cancel. We may change prices at any time without notice.`;
 
-export function AnalyzerInput({ onAnalyze, loading, error }: AnalyzerInputProps) {
+export function AnalyzerInput({ onAnalyze, loading, error, onRetry, canRetry }: AnalyzerInputProps) {
   const [text, setText] = useState('');
   const [title, setTitle] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -59,7 +62,7 @@ export function AnalyzerInput({ onAnalyze, loading, error }: AnalyzerInputProps)
             </h2>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Paste any terms of service, privacy policy, or legal agreement below. We&apos;ll scan it for red flags and explain it in plain English.
+            Paste any terms of service, privacy policy, or legal agreement below. Our AI will read it and explain what you&apos;re agreeing to.
           </p>
         </div>
 
@@ -91,9 +94,21 @@ export function AnalyzerInput({ onAnalyze, loading, error }: AnalyzerInputProps)
           </div>
 
           {error && (
-            <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5">
-              <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" />
+                <p className="flex-1 text-sm text-red-600">{error}</p>
+                {canRetry && (
+                  <button
+                    onClick={onRetry}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1 rounded-md bg-red-100 px-2 py-1 text-xs font-medium text-red-700 transition-colors hover:bg-red-200 disabled:opacity-50"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Retry
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -106,7 +121,7 @@ export function AnalyzerInput({ onAnalyze, loading, error }: AnalyzerInputProps)
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Analyzing...
+                  AI Analyzing...
                 </>
               ) : (
                 <>

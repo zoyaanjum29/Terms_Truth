@@ -1,0 +1,2 @@
+[functions.analyze-agreement]
+verify_jwt = false

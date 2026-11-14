@@ -9,6 +9,8 @@ import {
   Shield,
   Info,
   Calendar,
+  Calculator,
+  ChevronDown,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 
@@ -29,6 +31,7 @@ export function AnalysisReport({
 }: AnalysisReportProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
   const filtered = useMemo(() => {
     if (filter === 'all') return findings;
@@ -42,10 +45,27 @@ export function AnalysisReport({
 
   const filters: { key: FilterType; label: string; count: number; icon: typeof ShieldAlert }[] = [
     { key: 'all', label: 'All', count: findings.length, icon: FileText },
-    { key: 'critical', label: 'Critical', count: analysis.critical_count, icon: ShieldAlert },
-    { key: 'warning', label: 'Warnings', count: analysis.warning_count, icon: Shield },
-    { key: 'info', label: 'Info', count: analysis.info_count, icon: Info },
+    { key: 'critical', label: 'High Attention', count: analysis.critical_count, icon: ShieldAlert },
+    { key: 'warning', label: 'Medium', count: analysis.warning_count, icon: Shield },
+    { key: 'info', label: 'Low', count: analysis.info_count, icon: Info },
   ];
+
+  const scoreBreakdown = useMemo(() => {
+    const critical = analysis.critical_count;
+    const warning = analysis.warning_count;
+    const info = analysis.info_count;
+    const shortDocPenalty = analysis.word_count < 50 ? 10 : 0;
+    const deductions = [
+      { label: `${critical} high-attention finding${critical !== 1 ? 's' : ''}`, amount: critical * 18 },
+      { label: `${warning} medium-attention finding${warning !== 1 ? 's' : ''}`, amount: warning * 8 },
+      { label: `${info} low-attention finding${info !== 1 ? 's' : ''}`, amount: info * 2 },
+      ...(shortDocPenalty > 0
+        ? [{ label: 'Short document (under 50 words)', amount: shortDocPenalty }]
+        : []),
+    ];
+    const totalDeduction = deductions.reduce((sum, d) => sum + d.amount, 0);
+    return { deductions, totalDeduction, startingScore: 100 };
+  }, [analysis]);
 
   return (
     <div className="mx-auto w-full max-w-4xl animate-fade-in">
@@ -119,7 +139,7 @@ export function AnalysisReport({
                   {analysis.critical_count}
                 </span>
               </div>
-              <span className="text-xs font-medium text-red-500/70">Critical</span>
+              <span className="text-xs font-medium text-red-500/70">High Attention</span>
             </div>
             <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 p-3 text-center">
               <div className="flex items-center justify-center gap-1.5">
@@ -128,7 +148,7 @@ export function AnalysisReport({
                   {analysis.warning_count}
                 </span>
               </div>
-              <span className="text-xs font-medium text-amber-500/70">Warnings</span>
+              <span className="text-xs font-medium text-amber-500/70">Medium</span>
             </div>
             <div className="rounded-xl border border-sky-200/60 bg-sky-50/50 p-3 text-center">
               <div className="flex items-center justify-center gap-1.5">
@@ -137,8 +157,45 @@ export function AnalysisReport({
                   {analysis.info_count}
                 </span>
               </div>
-              <span className="text-xs font-medium text-sky-500/70">Info</span>
+              <span className="text-xs font-medium text-sky-500/70">Low</span>
             </div>
+          </div>
+
+          {/* Score breakdown transparency */}
+          <div className="mt-4">
+            <button
+              onClick={() => setShowScoreBreakdown(!showScoreBreakdown)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-teal-600"
+            >
+              <Calculator className="h-3.5 w-3.5" />
+              How is this score calculated?
+              <ChevronDown
+                className={`h-3.5 w-3.5 transition-transform ${showScoreBreakdown ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {showScoreBreakdown && (
+              <div className="animate-fade-in mt-3 rounded-xl border border-slate-200 bg-white/70 p-4">
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600">Starting score</span>
+                    <span className="font-semibold text-slate-700">{scoreBreakdown.startingScore}</span>
+                  </div>
+                  {scoreBreakdown.deductions.map((d, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-slate-500">{d.label}</span>
+                      <span className="font-medium text-red-500">&minus;{d.amount}</span>
+                    </div>
+                  ))}
+                  <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2">
+                    <span className="font-semibold text-slate-700">Final score</span>
+                    <span className="font-bold text-teal-600">{analysis.score}</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+                  The attention score is based only on verified findings with exact quotes from the document. Each high-attention finding deducts 18 points, medium deducts 8, and low deducts 2. This is not a legal fairness judgment &mdash; it reflects how much the agreement asks you to pay attention to.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -149,10 +206,10 @@ export function AnalysisReport({
                 <Shield className="h-8 w-8 text-emerald-600" />
               </div>
               <h3 className="text-base font-semibold text-slate-700">
-                No Red Flags Detected
+                No Significant Clauses Detected
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                This document didn&apos;t trigger any of our red-flag rules. Always review terms carefully — this is not legal advice.
+                The AI did not identify any clauses requiring attention. Always review terms carefully &mdash; this is not legal advice.
               </p>
             </div>
           ) : (
@@ -194,7 +251,7 @@ export function AnalysisReport({
       </div>
 
       <p className="mt-4 text-center text-xs text-slate-400">
-        TermsTruth provides automated analysis for informational purposes only and does not constitute legal advice.
+        TermsTruth provides AI-assisted analysis for informational purposes only and does not constitute legal advice.
       </p>
     </div>
   );
