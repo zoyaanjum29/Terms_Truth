@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TermsTruth</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="tt-popup">
+    <!-- Top Branding Header -->
+    <header class="tt-header">
+      <div class="tt-branding">
+        <h1 class="tt-wordmark">TermsTruth</h1>
+        <p class="tt-tagline">Understand before you agree.</p>
+      </div>
+      <div id="status-pill" class="tt-pill tt-pill-neutral hidden"></div>
+    </header>
+
+    <!-- Content Views -->
+    <main class="tt-main">
+      <!-- 1. Detecting View -->
+      <section id="view-detecting" class="tt-section text-center">
+        <div class="tt-spinner"></div>
+        <p class="tt-text-muted mt-2">Reading page content...</p>
+      </section>
+
+      <!-- 2. No Agreement Detected View -->
+      <section id="view-not-detected" class="tt-section hidden">
+        <div class="tt-empty-box">
+          <div class="tt-icon-circle">📄</div>
+          <h2 class="tt-title-md">No Agreement Detected</h2>
+          <p class="tt-text-sm">
+            We could not identify standard Terms of Service or Privacy Policy text on this page.
+          </p>
+          <div class="tt-actions mt-3">
+            <button id="btn-force-scan" class="tt-btn tt-btn-secondary">
+              Scan Page Text Anyway
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Agreement Detected / Ready to Scan -->
+      <section id="view-ready" class="tt-section hidden">
+        <div class="tt-doc-meta">
+          <span class="tt-meta-label">Detected Document</span>
+          <h2 id="ready-doc-title" class="tt-doc-title">Terms of Service</h2>
+          <div class="tt-meta-strip">
+            <span id="ready-word-count">~0 words</span>
+            <span>•</span>
+            <span class="tt-verified-tag">Ready for inspection</span>
+          </div>
+        </div>
+
+        <button id="btn-start-analyze" class="tt-btn tt-btn-primary w-full mt-4">
+          Analyze Clauses
+        </button>
+        <p class="tt-caption text-center mt-2">
+          Identifies high-risk waivers, data collection, and rights transfers.
+        </p>
+      </section>
+
+      <!-- 4. Analyzing Loading View -->
+      <section id="view-loading" class="tt-section text-center hidden">
+        <div class="tt-spinner"></div>
+        <h2 class="tt-title-md mt-3">Analyzing Agreement</h2>
+        <p class="tt-text-sm text-center mt-1">
+          Examining clauses and verifying exact quotes with Gemini...
+        </p>
+      </section>
+
+      <!-- 5. Compact Findings Results View -->
+      <section id="view-results" class="tt-section hidden">
+        <div class="tt-results-header">
+          <div>
+            <span class="tt-meta-label" id="results-origin-label">Summary Verdict</span>
+            <h2 id="results-doc-title" class="tt-doc-title-sm">Terms Analysis</h2>
+          </div>
+          <div id="results-summary-badge" class="tt-badge"></div>
+        </div>
+
+        <!-- Priority Findings (Top 1-2) -->
+        <div id="primary-findings-list" class="tt-findings-stack mt-3">
+          <!-- Injected via JavaScript -->
+        </div>
+
+        <!-- Collapsible Remaining Findings (if >2) -->
+        <div id="remaining-container" class="mt-2.5 hidden">
+          <button id="btn-toggle-remaining" class="tt-expand-link">
+            + View <span id="remaining-count">0</span> more identified clauses
+          </button>
+          <div id="remaining-findings-list" class="tt-findings-stack mt-2 hidden">
+            <!-- Injected via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="tt-results-footer mt-4">
+          <button id="btn-rescan" class="tt-link-btn" title="Re-analyze and bypass cache">
+            ↻ Re-scan
+          </button>
+          <a id="link-dashboard" class="tt-link-btn" href="#" target="_blank">
+            Open Dashboard ↗
+          </a>
+        </div>
+      </section>
+
+      <!-- 6. Error View -->
+      <section id="view-error" class="tt-section hidden">
+        <div class="tt-error-box">
+          <span class="tt-error-icon">⚠️</span>
+          <h2 class="tt-title-md text-red">Analysis Request Failed</h2>
+          <p id="error-message" class="tt-text-sm mt-1">
+            An unexpected error occurred while communicating with the analysis service.
+          </p>
+          <button id="btn-retry" class="tt-btn tt-btn-secondary mt-3">
+            Retry Analysis
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
+
