@@ -46,34 +46,35 @@ export default function App() {
     loadHistory();
   }, [loadHistory]);
 
-  const callEdgeFunction = async (text: string, title: string): Promise<EdgeFunctionResult> => {
-    const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-agreement`;
-    const response = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ text, title }),
-    });
-
-    if (!response.ok) {
-      let errorMsg = `Analysis failed (status ${response.status})`;
-      try {
-        const errorBody = await response.json();
-        if (errorBody?.error) errorMsg = errorBody.error;
-      } catch {
-        // response body wasn't JSON, use generic message
-      }
-      throw new Error(errorMsg);
+  
+const callEdgeFunction = async (
+  text: string,
+  title: string
+): Promise<EdgeFunctionResult> => {
+  const { data, error } = await supabase.functions.invoke(
+    'analyze-agreement',
+    {
+      body: { text, title },
     }
+  );
 
-    const data = await response.json();
-    if (!data || typeof data.score !== 'number' || !Array.isArray(data.findings)) {
-      throw new Error('The AI analysis returned an unexpected response format.');
-    }
-    return data as EdgeFunctionResult;
-  };
+  if (error) {
+    throw new Error(error.message || 'Analysis request failed.');
+  }
+
+  if (
+    !data ||
+    typeof data.score !== 'number' ||
+    !Array.isArray(data.findings)
+  ) {
+    throw new Error(
+      'The AI analysis returned an unexpected response format.'
+    );
+  }
+
+  return data as EdgeFunctionResult;
+};
+
 
   const handleAnalyze = async (text: string, title: string) => {
     setLoading(true);
