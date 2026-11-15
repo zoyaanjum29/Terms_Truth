@@ -1,14 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
-  Scale,
-  ShieldCheck,
   ShieldAlert,
   FileSearch,
-  Sparkles,
-  TrendingUp,
-  Clock,
+  FileText,
+  Layers,
   AlertTriangle,
-  RotateCcw,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Analysis, Finding, EdgeFunctionResult } from '@/lib/types';
@@ -206,87 +202,50 @@ export default function App() {
     setError(null);
   };
 
-  const stats = {
-    total: history.length,
-    critical: history.reduce((sum, a) => sum + a.critical_count, 0),
-    avgScore:
-      history.length > 0
-        ? Math.round(history.reduce((sum, a) => sum + a.score, 0) / history.length)
-        : 0,
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
+    <div className="min-h-screen bg-[#FAF8F5] text-charcoal-900 flex flex-col font-sans">
+      {/* Editorial Top Navigation */}
+      <header className="sticky top-0 z-30 border-b border-charcoal-200/80 bg-[#FAF8F5]/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <button
+            type="button"
             onClick={handleBack}
-            className="flex items-center gap-2.5 transition-opacity hover:opacity-80"
+            className="text-left transition-opacity hover:opacity-85"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-teal-700 shadow-sm">
-              <Scale className="h-5 w-5 text-white" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-base font-bold leading-tight text-slate-800">
-                TermsTruth
-              </h1>
-              <p className="text-[10px] leading-tight text-slate-400">
-                Know what you&apos;re agreeing to
-              </p>
-            </div>
+            <span className="font-serif text-2xl font-bold tracking-tight text-charcoal-950 block leading-none">
+              TermsTruth
+            </span>
+            <span className="text-xs font-normal text-charcoal-500 block leading-tight mt-1">
+              Understand before you agree.
+            </span>
           </button>
+
           {view === 'home' && history.length > 0 && (
-            <div className="flex items-center gap-4 text-xs text-slate-500">
-              <span className="hidden items-center gap-1.5 sm:inline-flex">
-                <TrendingUp className="h-3.5 w-3.5 text-teal-500" />
-                Avg score: <strong className="font-semibold text-slate-700">{stats.avgScore}</strong>
-              </span>
-              <span className="hidden items-center gap-1.5 sm:inline-flex">
-                <ShieldAlert className="h-3.5 w-3.5 text-red-500" />
-                {stats.critical} critical found
+            <div className="hidden sm:flex items-center gap-2 font-mono text-xs text-charcoal-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-forest-700" />
+              <span>
+                {history.length} {history.length === 1 ? 'document' : 'documents'} in registry
               </span>
             </div>
           )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 py-8">
+      {/* Main Content View */}
+      <main className="flex-1 mx-auto w-full max-w-5xl px-6 py-8">
         {view === 'home' && (
-          <div className="space-y-8">
-            <div className="text-center animate-fade-in">
-              <div className="mx-auto mb-4 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3.5 py-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-teal-600" />
-                <span className="text-xs font-semibold text-teal-700">
-                  AI-Powered Legal Analysis
-                </span>
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">
-                Don&apos;t just click{' '}
-                <span className="text-teal-600">&quot;I Agree&quot;</span>
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-relaxed text-slate-500">
-                Paste any terms of service and get an AI-powered analysis with red-flag alerts, exact evidence quotes, and plain-English explanations of what you&apos;re actually signing up for.
+          <div className="space-y-10">
+            {/* Focused Editorial Hero */}
+            <div className="text-center pt-2 pb-1 animate-fade-in">
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-charcoal-950 max-w-2xl mx-auto leading-tight">
+                Know What You&apos;re Agreeing To.
+              </h1>
+              <p className="mx-auto mt-3 max-w-xl text-sm sm:text-base leading-relaxed text-charcoal-600 font-normal">
+                Understand the hidden clauses in terms of service, privacy policies and agreements &mdash; explained in plain English.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 animate-slide-up">
-              <FeatureCard
-                icon={<ShieldCheck className="h-5 w-5 text-emerald-600" />}
-                title="Attention Score"
-                description="Get a transparent score based on verified findings — see exactly how it's calculated."
-              />
-              <FeatureCard
-                icon={<ShieldAlert className="h-5 w-5 text-red-500" />}
-                title="AI Clause Detection"
-                description="Our AI reads the entire agreement and identifies concerning clauses — not just keyword matches."
-              />
-              <FeatureCard
-                icon={<FileSearch className="h-5 w-5 text-teal-600" />}
-                title="Evidence-Backed"
-                description="Every finding includes an exact quote from the document, verified against the source text."
-              />
-            </div>
-
+            {/* Main Focus: Agreement Input Desk */}
             <AnalyzerInput
               onAnalyze={handleAnalyze}
               loading={loading}
@@ -295,19 +254,47 @@ export default function App() {
               canRetry={retryData !== null}
             />
 
-            <div className="border-t border-slate-200 pt-6">
-              <div className="mb-4 flex items-center gap-2">
-                <Clock className="h-4 w-4 text-slate-400" />
-                <h3 className="text-sm font-semibold text-slate-700">
-                  Recent Analyses
-                </h3>
+            {/* Methodology Assurance Pillars */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 animate-slide-up">
+              <MethodCard
+                icon={<FileSearch className="h-4 w-4 text-forest-700" />}
+                title="Exact Quote Evidence"
+                description="Every finding cites the original text directly from the document to verify its source."
+              />
+              <MethodCard
+                icon={<FileText className="h-4 w-4 text-forest-700" />}
+                title="Plain-English Translation"
+                description="Complex legal clauses are translated into clear, everyday explanations of what you accept."
+              />
+              <MethodCard
+                icon={<ShieldAlert className="h-4 w-4 text-warmAmber-700" />}
+                title="Attention Score"
+                description="A transparent score calculated from identified clauses to indicate provisions that warrant your review."
+              />
+            </div>
+
+            {/* Polished Document Registry */}
+            <div className="border-t border-charcoal-200/80 pt-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-forest-800" />
+                  <h3 className="font-serif text-base font-bold text-charcoal-900">
+                    Document Registry
+                  </h3>
+                </div>
+                {history.length > 0 && (
+                  <span className="font-mono text-xs text-charcoal-400">
+                    Showing {history.length} {history.length === 1 ? 'record' : 'records'}
+                  </span>
+                )}
               </div>
+
               {historyLoading ? (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="h-[72px] animate-pulse rounded-xl bg-slate-100"
+                      className="h-16 animate-pulse rounded-xl border border-charcoal-200/70 bg-white"
                     />
                   ))}
                 </div>
@@ -320,10 +307,11 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" />
-              <p className="text-xs leading-relaxed text-amber-700">
-                TermsTruth uses AI to analyze legal documents for informational purposes only — it is not a substitute for professional legal advice. Always consult a qualified attorney for important legal decisions.
+            {/* Transparent Disclaimer */}
+            <div className="flex items-start gap-3 rounded-lg border border-charcoal-200/80 bg-white/70 p-4 shadow-2xs">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-warmAmber-700" />
+              <p className="text-xs leading-relaxed text-charcoal-600">
+                <strong>Legal Notice:</strong> TermsTruth is an automated analytical tool provided for informational purposes only. It is not an attorney and cannot provide legal advice. Always review important contracts with qualified legal counsel.
               </p>
             </div>
           </div>
@@ -339,10 +327,14 @@ export default function App() {
         )}
       </main>
 
-      <footer className="border-t border-slate-200/70 py-6">
-        <div className="mx-auto max-w-5xl px-5 text-center">
-          <p className="text-xs text-slate-400">
-            TermsTruth &mdash; Understanding the fine print, one document at a time.
+      {/* Understated Editorial Footer */}
+      <footer className="border-t border-charcoal-200/80 py-6 mt-auto bg-[#FAF8F5]">
+        <div className="mx-auto max-w-5xl px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-charcoal-400">
+          <p className="font-serif text-charcoal-500">
+            TermsTruth &mdash; Understand before you agree.
+          </p>
+          <p className="font-mono text-[11px]">
+            Designed for clear, evidence-based contract review.
           </p>
         </div>
       </footer>
@@ -350,7 +342,7 @@ export default function App() {
   );
 }
 
-function FeatureCard({
+function MethodCard({
   icon,
   title,
   description,
@@ -360,12 +352,12 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:shadow-md">
-      <div className="mb-2.5 flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50">
+    <div className="rounded-xl border border-charcoal-200/80 bg-white p-5 shadow-2xs transition-all hover:border-charcoal-300">
+      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-md bg-ivory-100 border border-charcoal-100">
         {icon}
       </div>
-      <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-      <p className="mt-1 text-xs leading-relaxed text-slate-500">
+      <h4 className="font-serif text-sm font-bold text-charcoal-900">{title}</h4>
+      <p className="mt-1.5 text-xs leading-relaxed text-charcoal-600">
         {description}
       </p>
     </div>

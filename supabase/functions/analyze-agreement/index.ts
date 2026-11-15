@@ -225,6 +225,40 @@ function extractJsonFromResponse(text: string): unknown {
   return JSON.parse(jsonText);
 }
 
+function getClientIp(req: Request): string | null {
+  // Supabase's Cloudflare gateway supplies this header.
+  const ip = req.headers.get("cf-connecting-ip")?.trim();
+  return ip || null;
+}
+
+async function hashIp(ip: string, salt: string): Promise<string> {
+  const data = new TextEncoder().encode(`${salt}:${ip}`);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function getSupabaseSecretKey(): string | null {
+  // Current Supabase projects provide named secret keys.
+  const secretKeysJson = Deno.env.get("SUPABASE_SECRET_KEYS");
+
+  if (secretKeysJson) {
+    try {
+      const keys = JSON.parse(secretKeysJson);
+      if (typeof keys.default === "string") {
+        return keys.default;
+      }
+    } catch {
+      console.error("Could not read Supabase secret keys.");
+    }
+  }
+
+  // Compatibility with older Supabase projects.
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -260,6 +294,70 @@ Deno.serve(async (req: Request) => {
         },
       );
     }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseSecretKey = getSupabaseSecretKey();
+const rateLimitSalt = Deno.env.get("RATE_LIMIT_SALT");
+const clientIp = getClientIp(req);
+
+if (!supabaseUrl || !supabaseSecretKey || !rateLimitSalt || !clientIp) {
+  return new Response(
+    JSON.stringify({
+      error: "Security checks are not configured. Please try again later.",
+    }),
+    { status: 503, headers: corsHeaders },
+  );
+}
+
+const supabaseAdmin = createClient(
+  supabaseUrl,
+  supabaseSecretKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  },
+);
+
+const hashedIp = await hashIp(clientIp, rateLimitSalt);
+
+const { data: ipAllowed, error: ipError } =
+  await supabaseAdmin.rpc("consume_ip_rate_limit", {
+    p_bucket_key: `ip:${hashedIp}`,
+  });
+
+if (ipError) {
+  console.error("IP rate-limit check failed:", ipError.message);
+  return new Response(
+    JSON.stringify({ error: "Security check failed. Please try again later." }),
+    { status: 503, headers: corsHeaders },
+  );
+}
+
+if (ipAllowed !== true) {
+  return new Response(
+    JSON.stringify({ error: "Too many requests. Please try again in 10 minutes." }),
+    { status: 429, headers: corsHeaders },
+  );
+}
+
+const { data: dailyAllowed, error: dailyError } =
+  await supabaseAdmin.rpc("consume_global_daily_limit");
+
+if (dailyError) {
+  console.error("Daily rate-limit check failed:", dailyError.message);
+  return new Response(
+    JSON.stringify({ error: "Security check failed. Please try again later." }),
+    { status: 503, headers: corsHeaders },
+  );
+}
+
+if (dailyAllowed !== true) {
+  return new Response(
+    JSON.stringify({ error: "Daily analysis limit reached. Please try again later." }),
+    { status: 429, headers: corsHeaders },
+  );
+}
 
     const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
     const docTitle = (title || "Untitled Document").slice(0, 200);

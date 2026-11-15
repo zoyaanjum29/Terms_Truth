@@ -317,6 +317,10 @@ export function analyzeTerms(text: string, title: string): AnalysisResult {
           description: rule.description,
           excerpt: findExcerpt(text, pattern),
           recommendation: rule.recommendation,
+          why_it_matters: '',
+          attention_level: rule.severity === 'critical' ? 'High' : rule.severity === 'warning' ? 'Medium' : 'Low',
+          certainty: 'Explicit',
+          missing_information: null,
         });
         break;
       }
