@@ -304,7 +304,7 @@ function displayResults(data, isCached = false) {
     resultsSummaryBadge.textContent = `${warning} Medium Attention`;
     resultsSummaryBadge.className = 'tt-badge tt-badge-medium';
   } else {
-    resultsSummaryBadge.textContent = `Grade ${data.grade || 'A'}`;
+    resultsSummaryBadge.textContent = 'No major concerns detected';
     resultsSummaryBadge.className = 'tt-badge tt-badge-low';
   }
 

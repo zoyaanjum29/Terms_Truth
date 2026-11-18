@@ -44,15 +44,6 @@ export function HistoryList({ analyses, onSelect, onDelete }: HistoryListProps) 
             year: 'numeric',
           });
 
-          const gradeStyles: Record<string, { bg: string; text: string; border: string }> = {
-            A: { bg: 'bg-forest-50', text: 'text-forest-800', border: 'border-forest-300' },
-            B: { bg: 'bg-forest-50/70', text: 'text-forest-700', border: 'border-forest-200' },
-            C: { bg: 'bg-warmAmber-50', text: 'text-warmAmber-800', border: 'border-warmAmber-300' },
-            D: { bg: 'bg-warmAmber-100/60', text: 'text-warmAmber-900', border: 'border-warmAmber-400' },
-            F: { bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-300' },
-          };
-          const style = gradeStyles[a.grade] ?? gradeStyles.F;
-
           return (
             <div
               key={a.id}
@@ -63,11 +54,9 @@ export function HistoryList({ analyses, onSelect, onDelete }: HistoryListProps) 
                 onClick={() => onSelect(a.id)}
                 className="flex flex-1 items-center gap-4 text-left min-w-0"
               >
-                {/* Grade Stamp */}
-                <div
-                  className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border ${style.border} ${style.bg} font-serif text-base font-bold ${style.text} shadow-xs select-none`}
-                >
-                  {a.grade}
+                {/* Document Icon */}
+                <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-lg border border-charcoal-200/90 bg-ivory-100 text-forest-800 shadow-2xs select-none">
+                  <FileText className="h-5 w-5" />
                 </div>
 
                 {/* Document Information */}
@@ -76,9 +65,6 @@ export function HistoryList({ analyses, onSelect, onDelete }: HistoryListProps) 
                     <h4 className="truncate font-serif text-sm font-semibold tracking-tight text-charcoal-900 group-hover:text-forest-800">
                       {a.title}
                     </h4>
-                    <span className="font-mono text-[11px] text-charcoal-400">
-                      Score: {a.score}/100
-                    </span>
                   </div>
 
                   <div className="mt-1 flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-charcoal-500">
@@ -92,19 +78,19 @@ export function HistoryList({ analyses, onSelect, onDelete }: HistoryListProps) 
                       {a.critical_count > 0 && (
                         <span className="inline-flex items-center gap-1 font-medium text-red-700">
                           <SeverityIcon severity="critical" />
-                          <span>{a.critical_count} High</span>
+                          <span>{a.critical_count} Important</span>
                         </span>
                       )}
                       {a.warning_count > 0 && (
                         <span className="inline-flex items-center gap-1 font-medium text-warmAmber-800">
                           <SeverityIcon severity="warning" />
-                          <span>{a.warning_count} Med</span>
+                          <span>{a.warning_count} Be Aware</span>
                         </span>
                       )}
                       {a.info_count > 0 && (
                         <span className="inline-flex items-center gap-1 font-medium text-charcoal-600">
                           <SeverityIcon severity="info" />
-                          <span>{a.info_count} Low</span>
+                          <span>{a.info_count} Info</span>
                         </span>
                       )}
                     </div>

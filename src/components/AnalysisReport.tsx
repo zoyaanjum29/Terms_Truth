@@ -1,5 +1,4 @@
 import type { Analysis, Finding } from '@/lib/types';
-import { ScoreRing, GradeBadge } from './ScoreRing';
 import { FindingCard } from './FindingCard';
 import {
   ArrowLeft,
@@ -9,8 +8,6 @@ import {
   AlertTriangle,
   Info,
   Calendar,
-  Calculator,
-  ChevronDown,
   ShieldCheck,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
@@ -24,6 +21,12 @@ interface AnalysisReportProps {
 
 type FilterType = 'all' | 'critical' | 'warning' | 'info';
 
+const severityRank: Record<string, number> = {
+  critical: 0,
+  warning: 1,
+  info: 2,
+};
+
 export function AnalysisReport({
   analysis,
   findings,
@@ -32,12 +35,20 @@ export function AnalysisReport({
 }: AnalysisReportProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
+
+  // Sort findings so the most significant user impacts appear first
+  const sortedFindings = useMemo(() => {
+    return [...findings].sort((a, b) => {
+      const rankA = severityRank[a.severity] ?? 3;
+      const rankB = severityRank[b.severity] ?? 3;
+      return rankA - rankB;
+    });
+  }, [findings]);
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return findings;
-    return findings.filter((f) => f.severity === filter);
-  }, [findings, filter]);
+    if (filter === 'all') return sortedFindings;
+    return sortedFindings.filter((f) => f.severity === filter);
+  }, [sortedFindings, filter]);
 
   const formattedDate = new Date(analysis.created_at).toLocaleDateString(
     'en-US',
@@ -45,28 +56,11 @@ export function AnalysisReport({
   );
 
   const filters: { key: FilterType; label: string; count: number; icon: typeof ShieldAlert }[] = [
-    { key: 'all', label: 'All Identified Clauses', count: findings.length, icon: FileText },
-    { key: 'critical', label: 'High Attention', count: analysis.critical_count, icon: ShieldAlert },
-    { key: 'warning', label: 'Medium Attention', count: analysis.warning_count, icon: AlertTriangle },
-    { key: 'info', label: 'Low / Informational', count: analysis.info_count, icon: Info },
+    { key: 'all', label: 'All Findings', count: findings.length, icon: FileText },
+    { key: 'critical', label: 'Important', count: analysis.critical_count, icon: ShieldAlert },
+    { key: 'warning', label: 'Be Aware', count: analysis.warning_count, icon: AlertTriangle },
+    { key: 'info', label: 'Informational', count: analysis.info_count, icon: Info },
   ];
-
-  const scoreBreakdown = useMemo(() => {
-    const critical = analysis.critical_count;
-    const warning = analysis.warning_count;
-    const info = analysis.info_count;
-    const shortDocPenalty = analysis.word_count < 50 ? 10 : 0;
-    const deductions = [
-      { label: `${critical} high-attention clause${critical !== 1 ? 's' : ''}`, amount: critical * 18 },
-      { label: `${warning} medium-attention clause${warning !== 1 ? 's' : ''}`, amount: warning * 8 },
-      { label: `${info} low-attention clause${info !== 1 ? 's' : ''}`, amount: info * 2 },
-      ...(shortDocPenalty > 0
-        ? [{ label: 'Short document penalty (< 50 words)', amount: shortDocPenalty }]
-        : []),
-    ];
-    const totalDeduction = deductions.reduce((sum, d) => sum + d.amount, 0);
-    return { deductions, totalDeduction, startingScore: 100 };
-  }, [analysis]);
 
   return (
     <div className="mx-auto w-full max-w-4xl animate-fade-in pb-12">
@@ -114,124 +108,114 @@ export function AnalysisReport({
 
       {/* Main Executive Summary Dossier */}
       <div className="overflow-hidden rounded-xl border border-charcoal-200/80 bg-white shadow-sm">
-        {/* Header Section with Score & Memorandum */}
+        {/* Header Section: Real-World Impact Focus */}
         <div className="border-b border-charcoal-100 bg-gradient-to-br from-ivory-50 via-white to-ivory-50/60 p-6 sm:p-8">
-          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start">
-            <div className="flex flex-col items-center flex-shrink-0">
-              <ScoreRing score={analysis.score} grade={analysis.grade} />
-              <span className="mt-2 text-center font-mono text-[10px] font-semibold uppercase tracking-wider text-charcoal-500">
-                Attention Score
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-forest-800 bg-forest-50 px-2.5 py-0.5 rounded border border-forest-200/60">
+                Agreement Impact Review
+              </span>
+              <span className="font-mono text-xs text-charcoal-500 truncate max-w-md">
+                {analysis.title}
               </span>
             </div>
 
-            <div className="flex-1 text-center sm:text-left min-w-0">
-              <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
-                <h1 className="font-serif text-2xl font-bold tracking-tight text-charcoal-900 sm:text-3xl">
-                  {analysis.title}
-                </h1>
-                <GradeBadge grade={analysis.grade} />
-              </div>
+            <h1 className="mt-2 font-serif text-2xl font-bold tracking-tight text-charcoal-950 sm:text-3xl">
+              How could these terms affect you?
+            </h1>
 
-              <div className="mt-3 rounded-lg border border-charcoal-100 bg-white/80 p-4 shadow-2xs">
-                <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-wider text-charcoal-400">
-                  Executive Analysis Summary
-                </span>
-                <p className="text-sm leading-relaxed text-charcoal-700">
-                  {analysis.summary}
-                </p>
-              </div>
+            {/* Executive Analysis Summary */}
+            <div className="mt-4 rounded-xl border border-charcoal-200/80 bg-white p-5 shadow-2xs">
+              <span className="mb-1 block font-mono text-[10px] font-bold uppercase tracking-wider text-forest-800">
+                Executive Impact Overview
+              </span>
+              <p className="text-sm leading-relaxed text-charcoal-700">
+                {analysis.summary}
+              </p>
+            </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 font-mono text-xs text-charcoal-500 sm:justify-start">
-                <span className="inline-flex items-center gap-1.5">
-                  <FileText className="h-3.5 w-3.5 text-charcoal-400" />
-                  {analysis.word_count.toLocaleString()} words analyzed
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5 text-charcoal-400" />
-                  {formattedDate}
-                </span>
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1 font-mono text-xs text-charcoal-500">
+              <span className="inline-flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5 text-charcoal-400" />
+                {analysis.word_count.toLocaleString()} words analyzed
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 text-charcoal-400" />
+                {formattedDate}
+              </span>
             </div>
           </div>
 
-          {/* Attention Level Count Cards */}
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="rounded-lg border border-red-200/80 bg-red-50/50 p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <ShieldAlert className="h-4 w-4 text-red-600" />
+          {/* Attention Level Summary Cards */}
+          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => setFilter('critical')}
+              className={`rounded-lg border p-3.5 text-left transition-all ${
+                filter === 'critical'
+                  ? 'border-red-400 bg-red-50/80 shadow-xs ring-1 ring-red-400'
+                  : 'border-red-200/80 bg-red-50/40 hover:bg-red-50/70'
+              }`}
+            >
+              <div className="flex items-center justify-between">
                 <span className="font-serif text-2xl font-bold text-red-700">
                   {analysis.critical_count}
                 </span>
+                <ShieldAlert className="h-4 w-4 text-red-600" />
               </div>
-              <span className="mt-0.5 block font-mono text-[11px] font-medium text-red-700">
-                High Attention
+              <span className="mt-1 block font-mono text-xs font-bold text-red-800">
+                Important
               </span>
-            </div>
+              <span className="mt-0.5 block text-[11px] leading-snug text-red-900/80">
+                Provisions that could significantly affect your money, privacy, rights, or account.
+              </span>
+            </button>
 
-            <div className="rounded-lg border border-warmAmber-200/80 bg-warmAmber-50/50 p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <AlertTriangle className="h-4 w-4 text-warmAmber-700" />
+            <button
+              type="button"
+              onClick={() => setFilter('warning')}
+              className={`rounded-lg border p-3.5 text-left transition-all ${
+                filter === 'warning'
+                  ? 'border-warmAmber-400 bg-warmAmber-50/80 shadow-xs ring-1 ring-warmAmber-400'
+                  : 'border-warmAmber-200/80 bg-warmAmber-50/40 hover:bg-warmAmber-50/70'
+              }`}
+            >
+              <div className="flex items-center justify-between">
                 <span className="font-serif text-2xl font-bold text-warmAmber-800">
                   {analysis.warning_count}
                 </span>
+                <AlertTriangle className="h-4 w-4 text-warmAmber-700" />
               </div>
-              <span className="mt-0.5 block font-mono text-[11px] font-medium text-warmAmber-800">
-                Medium Attention
+              <span className="mt-1 block font-mono text-xs font-bold text-warmAmber-800">
+                Be Aware
               </span>
-            </div>
+              <span className="mt-0.5 block text-[11px] leading-snug text-warmAmber-900/80">
+                Conditions and terms worth understanding before you agree.
+              </span>
+            </button>
 
-            <div className="rounded-lg border border-charcoal-200/80 bg-charcoal-50/60 p-3.5 text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <Info className="h-4 w-4 text-charcoal-600" />
+            <button
+              type="button"
+              onClick={() => setFilter('info')}
+              className={`rounded-lg border p-3.5 text-left transition-all ${
+                filter === 'info'
+                  ? 'border-charcoal-400 bg-charcoal-100 shadow-xs ring-1 ring-charcoal-400'
+                  : 'border-charcoal-200/80 bg-charcoal-50/60 hover:bg-charcoal-100/70'
+              }`}
+            >
+              <div className="flex items-center justify-between">
                 <span className="font-serif text-2xl font-bold text-charcoal-800">
                   {analysis.info_count}
                 </span>
+                <Info className="h-4 w-4 text-charcoal-600" />
               </div>
-              <span className="mt-0.5 block font-mono text-[11px] font-medium text-charcoal-600">
-                Low / Informational
+              <span className="mt-1 block font-mono text-xs font-bold text-charcoal-700">
+                Informational
               </span>
-            </div>
-          </div>
-
-          {/* Transparent Score Calculation Ledger */}
-          <div className="mt-5 border-t border-charcoal-100 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowScoreBreakdown(!showScoreBreakdown)}
-              className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-charcoal-600 transition-colors hover:text-forest-800"
-            >
-              <Calculator className="h-3.5 w-3.5 text-forest-700" />
-              How is this Attention Score calculated?
-              <ChevronDown
-                className={`h-3.5 w-3.5 text-charcoal-400 transition-transform ${
-                  showScoreBreakdown ? 'rotate-180 text-forest-700' : ''
-                }`}
-              />
+              <span className="mt-0.5 block text-[11px] leading-snug text-charcoal-600">
+                Helpful context and routine operational disclosures.
+              </span>
             </button>
-
-            {showScoreBreakdown && (
-              <div className="mt-3 rounded-lg border border-charcoal-200/80 bg-white p-4.5 animate-fade-in shadow-2xs">
-                <div className="space-y-2 font-mono text-xs">
-                  <div className="flex items-center justify-between pb-1 border-b border-charcoal-100">
-                    <span className="text-charcoal-700">Baseline score</span>
-                    <span className="font-semibold text-charcoal-900">{scoreBreakdown.startingScore} pts</span>
-                  </div>
-                  {scoreBreakdown.deductions.map((d, i) => (
-                    <div key={i} className="flex items-center justify-between text-charcoal-600">
-                      <span>{d.label}</span>
-                      <span className="font-semibold text-red-600">&minus;{d.amount} pts</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between border-t border-charcoal-200 pt-2 font-bold text-charcoal-900">
-                    <span>Resulting Attention Score</span>
-                    <span className="text-forest-800">{analysis.score} / 100</span>
-                  </div>
-                </div>
-                <p className="mt-3.5 text-[11px] leading-relaxed text-charcoal-500 border-t border-charcoal-100 pt-3">
-                  This score is an informational measure based on verified findings and exact quotes identified in the document text. It is designed to signal how heavily weighted the agreement is with provisions requiring user scrutiny. It does not constitute a formal legal risk or legal fairness judgment.
-                </p>
-              </div>
-            )}
           </div>
         </div>
 
@@ -243,10 +227,10 @@ export function AnalysisReport({
                 <ShieldCheck className="h-7 w-7" />
               </div>
               <h3 className="font-serif text-lg font-bold text-charcoal-800">
-                No Flagged Clauses Detected
+                No Flagged Provisions Detected
               </h3>
               <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-charcoal-500">
-                The analysis did not detect significant unilateral clauses requiring attention in this document. Always review terms carefully before agreeing.
+                The analysis did not detect significant unilateral clauses or high-impact restrictions in this document. Always review terms carefully before agreeing.
               </p>
             </div>
           ) : (
